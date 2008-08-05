@@ -117,16 +117,11 @@ class MetaFramework
             path.basename(suffix).to_s
           }
         else
-          prefix_file = f.sub(/\/*$/, '/') 
+          prefix_file = @framework.root.join(f).to_s.sub(/\/*$/, '/')
 
-          require 'timeout'
-          r = []
-          timeout(3) {
-            r = Dir.glob(prefix_file + "#{name}{*,**/*}").map {|files|
-              files.sub(prefix_file, '')
-            }
+          Dir.glob(prefix_file + "#{name}{*,**/*}").map {|files|
+            files.sub(prefix_file, '')
           }
-          r
         end
       }.flatten.sort.uniq
     end
