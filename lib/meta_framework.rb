@@ -118,9 +118,15 @@ class MetaFramework
           }
         else
           prefix_file = f.sub(/\/*$/, '/') 
-          Dir.glob(prefix_file + "#{name}{*,**/*}").map {|files|
-            files.sub(prefix_file, '')
+
+          require 'timeout'
+          r = []
+          timeout(3) {
+            r = Dir.glob(prefix_file + "#{name}{*,**/*}").map {|files|
+              files.sub(prefix_file, '')
+            }
           }
+          r
         end
       }.flatten.sort.uniq
     end
