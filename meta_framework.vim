@@ -22,7 +22,7 @@ execute "ruby MetaFramework.sid = " . shellescape(substitute(maparg("<SID>xx"),'
 unmap <SID>xx
 
 
-autocmd BufEnter * ruby MetaFramework.registry_buffer
+autocmd BufEnter * ruby MetaFramework.registry_current_buffer
 "augroup metaFramework
 "  autocmd!
 "  autocmd User BufEnterMetaFramework call echo 'hello'

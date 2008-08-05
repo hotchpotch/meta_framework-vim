@@ -14,10 +14,8 @@ class MetaFramework
     @@sid
   end
 
-  @@buffers = {}
-  def self.registry_buffer(buffer = nil)
-    buffer ||= Buffer.current
-    @@buffers[buffer.number] ||= buffer
+  def self.registry_current_buffer
+    Buffer.current
   end
 
   @@frameworks = {}
@@ -36,45 +34,47 @@ class MetaFramework
     nil
   end
 
+  YAML_FILENAME = 'meta_framework.yml'
   def self.root?(path)
-    path.join('meta_framework.yml').exist?
+    path.join(YAML_FILENAME).exist?
   end
 
   def self.invoke_command_complete(arglead, cmdline, cursorpos)
-    if buffer = @@buffers[VIM::Buffer.current.number]
-      res = buffer.command_complete(arglead, cmdline, cursorpos)
-    else
-      res = []
-    end
-    VIM.command 'let g:MetaFrameworkRES=' + res.inspect
+    res = Buffer.current.command_complete(arglead, cmdline, cursorpos)
+    VIM::command 'let g:MetaFrameworkRES=' + res.inspect
   end
 
   def self.invoke_command(bang, cmd, *args)
-    if buffer = @@buffers[VIM::Buffer.current.number]
-      buffer.invoke(cmd, *args)
-    end
+    Buffer.current.invoke(cmd, *args)
   end
 
   def initialize(root)
     @root = Pathname.new(root)
     @@frameworks[@root.realpath] ||= self
+    @config = {
+      'files' => {},
+    }
+    begin
+      require 'yaml'
+      @config.merge! YAML.load_file(@root.join(YAML_FILENAME))
+    rescue Exception => e
+      VIM::command("echoerr '" + e.inspect + "'")
+    end
   end
   attr_accessor :root
-
-  def command(*args)
-    p args
-  end
+  attr_reader :config
 
   class Buffer
+    @@buffers = {}
     def initialize(buffer)
-      @buffer = buffer
+      @vim_buffer = buffer
       @framework = MetaFramework.search(path)
       registry_commands
     end
-    attr_reader :buffer
+    attr_reader :vim_buffer
 
     def number
-      buffer.number
+      vim_buffer.number
     end
 
     def path 
@@ -82,21 +82,28 @@ class MetaFramework
     end
 
     def self.current
-      new VIM::Buffer.current
+      vb = VIM::Buffer.current
+      @@buffers[vb.number] ||= new vb
     end
 
-    def command_complete(arglead, cmdline, cursorpos)
-      p [arglead, cmdline, cursorpos]
-      ['aaa', 'bbb','aac']
+    def invoke(*args)
+    end
+
+    def command_complete(name, cmdline, cursorpos)
+      cmdname = cmdline.split(' ', 2).first
+      files = @framework.config['files'][cmdname] || []
+      files.map {|f| 
+        Pathname.glob @framework.root.join(f.sub('{name}', "#{name}*")).to_s 
+      }.flatten.map{|path| path.basename.to_s}.sort.uniq
     end
 
     def registry_commands
       if @framework
         sid = MetaFramework.sid
-        cmd = %Q[command! -buffer -bar -nargs=* -complete=customlist,#{sid}InvokeCommandComplete META :call #{sid}InvokeCommand(<bang>0,'hello',<f-args>)]
-        VIM::command cmd
-        #let cplt = " -complete=custom,".s:sid.l."List"
-        #exe "command! -buffer -bar -nargs=*".cplt." R".cmd.l." :call s:".l.'Edit(<bang>0,"'.cmd.'",<f-args>)'
+        @framework.config['files'].keys.each do |name, files|
+          cmd = %Q[command! -buffer -bar -nargs=* -complete=customlist,#{sid}InvokeCommandComplete #{name} :call #{sid}InvokeCommand(<bang>0,'files',<f-args>)]
+          VIM::command cmd
+        end
       end
     end
   end
