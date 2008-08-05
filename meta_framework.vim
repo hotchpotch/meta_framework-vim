@@ -1,19 +1,21 @@
 
-"ruby << EOF
-"  load '/home/gorou/git/github/meta_framework-vim/lib/meta_framework.rb'
-"  #p VIM::Method.expand('#1:P')
-"EOF
-
-function! s:sub(str,pat,rep)
-  return substitute(a:str,'\v\C'.a:pat,a:rep,'')
+function! s:InvokeCommandComplete(A,L,P)
+  execute "ruby MetaFramework.invoke_command_complete " . shellescape(a:A) . ", " . shellescape(a:L) .  ", " . shellescape(a:P)
+  return g:MetaFrameworkRES
 endfunction
 
-map <SID>xx <SID>xx
-let g:MetaFrameworkSID = s:sub(maparg("<SID>xx"),'xx$','')
-unmap <SID>xx
+function! s:InvokeCommand(bang, cmd, ...)
+  execute "ruby MetaFramework.invoke_command " . shellescape(a:bang) . ", " . shellescape(a:cmd)
+  return g:MetaFrameworkRES
+endfunction
 
 let s:meta_framework_file = fnamemodify(resolve(expand('<sfile>:p')), ':p:h') . '/lib/meta_framework.rb'
 execute 'rubyfile ' . s:meta_framework_file
+
+map <SID>xx <SID>xx
+execute "ruby MetaFramework.sid = " . shellescape(substitute(maparg("<SID>xx"),'xx$','', ''))
+unmap <SID>xx
+
 
 autocmd BufEnter * ruby MetaFramework.registry_buffer
 "augroup metaFramework

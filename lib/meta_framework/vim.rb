@@ -7,7 +7,7 @@ class MetaFramework
 
   module ::VIM
     def escape(str)
-      str.to_s.gsub("'", %q{'\''})
+      str.to_s.gsub("'", %q{\'})
     end
     module_function :escape
     module Function
