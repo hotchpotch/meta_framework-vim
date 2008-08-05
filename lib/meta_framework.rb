@@ -49,14 +49,10 @@ class MetaFramework
     VIM.command 'let g:MetaFrameworkRES=' + res.inspect
   end
 
-  def self.invoke_command(bang, cmd)
-    p [bang, cmd]
-    #if framework = @@frameworks[VIM::Buffer.current.number]
-    #  res = framework.command_complete(arglead, cmdline, cursorpos)
-    #else
-    #  res = []
-    #end
-    #evaluate 'let g:MetaFrameworkRES=' + res.inspect
+  def self.invoke_command(bang, cmd, *args)
+    if buffer = @@buffers[VIM::Buffer.current.number]
+      buffer.invoke(cmd, *args)
+    end
   end
 
   def initialize(root)
@@ -91,7 +87,7 @@ class MetaFramework
 
     def command_complete(arglead, cmdline, cursorpos)
       p [arglead, cmdline, cursorpos]
-      ['aaa', 'bbb' 'aac']
+      ['aaa', 'bbb','aac']
     end
 
     def registry_commands

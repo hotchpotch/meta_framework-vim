@@ -5,7 +5,12 @@ function! s:InvokeCommandComplete(A,L,P)
 endfunction
 
 function! s:InvokeCommand(bang, cmd, ...)
-  execute "ruby MetaFramework.invoke_command " . shellescape(a:bang) . ", " . shellescape(a:cmd)
+  let option = ''
+  if len(a:000)
+    let option .= ', ' . join(map(copy(a:000), 'shellescape(v:val)'), ', ')
+  endif
+
+  execute "ruby MetaFramework.invoke_command " . shellescape(a:bang) . ", " . shellescape(a:cmd) . option
   return g:MetaFrameworkRES
 endfunction
 
