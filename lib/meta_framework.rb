@@ -91,12 +91,16 @@ class MetaFramework
       name = args.first or return
       files = @framework.config['files'][cmdname] || []
       res = files.map {|f|
-        Dir.glob(@framework.root.join(f.sub('{name}', "#{name}")).to_s)
+        if f.include?('*')
+          Dir.glob(@framework.root.join(f.sub('*', "#{name}")).to_s)
+        else
+          Dir.glob(@framework.root.join(f).join(name).to_s)
+        end
       }
       if res.length > 0
         file = res.first
       elsif files.length > 0
-        file = files.first.sub('{name}', "#{name}")
+        file = files.first.sub('*', "#{name}")
       end
       if file
         VIM::command("edit #{file}")
@@ -107,10 +111,17 @@ class MetaFramework
       cmd = cmdline.split(' ', 2).first
       files = @framework.config['files'][cmd] || []
       files.map {|f| 
-        suffix = f.split('{name}', 2).last
-        Pathname.glob(@framework.root.join(f.sub('{name}', "#{name}*")).to_s).map{|path|
-          path.basename(suffix).to_s
-        }
+        if f.include?('*')
+          suffix = f.split('*', 2).last
+          Pathname.glob(@framework.root.join(f.sub('*', "#{name}*")).to_s).map{|path|
+            path.basename(suffix).to_s
+          }
+        else
+          prefix_file = f.sub(/\/*$/, '/') 
+          Dir.glob(prefix_file + "#{name}{*,**/*}").map {|files|
+            files.sub(prefix_file, '')
+          }
+        end
       }.flatten.sort.uniq
     end
 
