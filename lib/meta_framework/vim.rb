@@ -7,14 +7,16 @@ class MetaFramework
 
   module ::VIM
     def escape(str)
-      str.gsub("'", %q{'\''})
+      str.to_s.gsub("'", %q{'\''})
     end
     module_function :escape
-    class Method
-      def self.method_missing(name, *args)
-        args = args.map{|a| "'#{escape(a)}'" }
-        VIM::evaluate("#{escape(name)}(#{args.join(', ')})")
+    module Function
+      def method_missing(name, *args)
+        args = args.map{|a| "'#{VIM::escape(a)}'" }
+        VIM::evaluate("#{VIM::escape(name)}(#{args.join(', ')})")
       end
+
+      extend self
     end
   end
 end

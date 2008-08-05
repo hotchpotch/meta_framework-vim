@@ -14,16 +14,22 @@ class MetaFramework
   end
 
   def initialize(root)
-    @root = root
+    @root = Pathname.new(root)
   end
+  attr_accessor :root
 
   class Buffer
-    def initialize(framework, buffer)
-      @framework = framework
+    def initialize(buffer)
       @buffer = buffer
     end
+    attr_reader :buffer
 
-    def file
+    def path 
+      Pathname.new VIM::Function.expand("##{buffer.number}:p")
+    end
+
+    def self.current
+      new VIM::Buffer.current
     end
   end
 end
