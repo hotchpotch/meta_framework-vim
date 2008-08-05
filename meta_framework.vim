@@ -1,4 +1,9 @@
 
+if exists('g:loaded_meta_framework') || v:version < 700 || !has("ruby")
+  finish
+endif
+let g:loaded_meta_framework = 1
+
 function! s:InvokeCommandComplete(A,L,P)
   execute "ruby MetaFramework.invoke_command_complete " . shellescape(a:A) . ", " . shellescape(a:L) .  ", " . shellescape(a:P)
   return g:MetaFrameworkRES
@@ -22,13 +27,4 @@ map <SID>xx <SID>xx
 execute "ruby MetaFramework.sid = " . shellescape(substitute(maparg("<SID>xx"),'xx$','', ''))
 unmap <SID>xx
 
-
 autocmd BufEnter * ruby MetaFramework.registry_current_buffer
-"augroup metaFramework
-"  autocmd!
-"  autocmd User BufEnterMetaFramework call echo 'hello'
-"  autocmd User BufEnterMetaFramework ruby MetaFramework.registry_buffer
-"  autocmd BufEnter * doau User
-"  
-"  " autocmd User BufEnterMetaFramework call s:RefreshBuffer()
-"augroup END
