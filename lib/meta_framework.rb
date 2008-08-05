@@ -44,8 +44,8 @@ class MetaFramework
     VIM::command 'let g:MetaFrameworkRES=' + res.inspect
   end
 
-  def self.invoke_command(bang, cmd, *args)
-    Buffer.current.invoke(cmd, *args)
+  def self.invoke_command(name, cmd, bang, *args)
+    Buffer.current.invoke(name, cmd, bang, *args)
   end
 
   def initialize(root)
@@ -86,22 +86,40 @@ class MetaFramework
       @@buffers[vb.number] ||= new vb
     end
 
-    def invoke(*args)
+    def invoke(cmdname, command, bang, *args)
+      # p [name, cmd, bang, *args]
+      name = args.first or return
+      files = @framework.config['files'][cmdname] || []
+      res = files.map {|f|
+        Dir.glob(@framework.root.join(f.sub('{name}', "#{name}")).to_s)
+      }
+      if res.length > 0
+        file = res.first
+      elsif files.length > 0
+        file = files.first.sub('{name}', "#{name}")
+      end
+      if file
+        VIM::command("edit #{file}")
+      end
     end
 
     def command_complete(name, cmdline, cursorpos)
-      cmdname = cmdline.split(' ', 2).first
-      files = @framework.config['files'][cmdname] || []
+      cmd = cmdline.split(' ', 2).first
+      files = @framework.config['files'][cmd] || []
       files.map {|f| 
-        Pathname.glob @framework.root.join(f.sub('{name}', "#{name}*")).to_s 
-      }.flatten.map{|path| path.basename.to_s}.sort.uniq
+        suffix = f.split('{name}', 2).last
+        Pathname.glob(@framework.root.join(f.sub('{name}', "#{name}*")).to_s).map{|path|
+          path.basename(suffix).to_s
+        }
+      }.flatten.sort.uniq
     end
 
     def registry_commands
       if @framework
         sid = MetaFramework.sid
         @framework.config['files'].keys.each do |name, files|
-          cmd = %Q[command! -buffer -bar -nargs=* -complete=customlist,#{sid}InvokeCommandComplete #{name} :call #{sid}InvokeCommand(<bang>0,'files',<f-args>)]
+          cmd = %Q[command! -buffer -bar -nargs=* -complete=customlist,#{sid}InvokeCommandComplete #{name} 
+          \ :call #{sid}InvokeCommand('#{name}', 'files', <bang>0, <f-args>)]
           VIM::command cmd
         end
       end
