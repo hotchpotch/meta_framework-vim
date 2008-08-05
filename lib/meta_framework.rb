@@ -112,9 +112,10 @@ class MetaFramework
       files = @framework.config['files'][cmd] || []
       files.map {|f| 
         if f.include?('*')
-          suffix = f.split('*', 2).last
-          Pathname.glob(@framework.root.join(f.sub('*', "#{name}*")).to_s).map{|path|
-            path.basename(suffix).to_s
+          prefix, suffix = @framework.root.join(f).to_s.split('*', 2)
+          Dir.glob(@framework.root.join(f.sub('*', "{#{name}*,**/#{name}*}")).to_s).map{|path|
+            path.sub(prefix, '').sub(/#{suffix}$/, '')
+            #path.basename(suffix).to_s
           }
         else
           prefix_file = @framework.root.join(f).to_s.sub(/\/*$/, '/')
