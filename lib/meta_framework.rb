@@ -51,6 +51,10 @@ class MetaFramework
   def initialize(root)
     @root = Pathname.new(root)
     @@frameworks[@root.realpath] ||= self
+    load_config
+  end
+
+  def load_config
     @config = {
       'files' => {},
     }
@@ -61,6 +65,7 @@ class MetaFramework
       VIM::command("echoerr '" + e.inspect + "'")
     end
   end
+
   attr_accessor :root
   attr_reader :config
 
@@ -89,7 +94,7 @@ class MetaFramework
     def invoke(cmdname, command, bang, *args)
       # p [name, cmd, bang, *args]
       name = args.first or return
-      files = @framework.config['files'][cmdname] || []
+      files = @framework.config['Files'][cmdname] || []
       res = files.map {|f|
         if f.include?('*')
           Dir.glob(@framework.root.join(f.sub('*', "#{name}")).to_s)
@@ -109,7 +114,7 @@ class MetaFramework
 
     def command_complete(name, cmdline, cursorpos)
       cmd = cmdline.split(' ', 2).first
-      files = @framework.config['files'][cmd] || []
+      files = @framework.config['Files'][cmd] || []
       files.map {|f| 
         if f.include?('*')
           prefix, suffix = @framework.root.join(f).to_s.split('*', 2)
@@ -130,9 +135,9 @@ class MetaFramework
     def registry_commands
       if @framework
         sid = MetaFramework.sid
-        @framework.config['files'].keys.each do |name, files|
+        @framework.config['Files'].keys.each do |name, files|
           cmd = %Q[command! -buffer -bar -nargs=* -complete=customlist,#{sid}InvokeCommandComplete #{name} 
-          \ :call #{sid}InvokeCommand('#{name}', 'files', <bang>0, <f-args>)]
+          \ :call #{sid}InvokeCommand('#{name}', 'Files', <bang>0, <f-args>)]
           VIM::command cmd
         end
       end
